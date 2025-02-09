@@ -1,0 +1,37 @@
+name: Handle Issues and Pull Requests
+
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    types: [opened]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'  # Adjust the version as needed
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Add SSH Key for EC2
+      run: |
+        mkdir -p ~/.ssh
+        echo "$EC2_SSH_KEY" | base64 --decode > ~/.ssh/github-actions-key
+        chmod 600 ~/.ssh/github-actions-key
+
+    - name: Deploy to EC2
+      run: |
+        ssh -i ~/.ssh/github-actions-key -o StrictHostKeyChecking=no ubuntu@$EC2_IP "cd /home/ubuntu/your-app-directory && git pull origin main && npm install && pm2 restart your-app-name"
+
+    - name: Run the GitHub Action Script
+      run: |
+        node your-script.js  # Replace with the path to your script
